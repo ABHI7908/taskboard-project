@@ -1,0 +1,13 @@
+# Example Alertmanager config snippet — merge into the values.yaml
+# used by the kube-prometheus-stack Helm install, or apply as a Secret.
+# Replace the Slack webhook URL with your own before using.
+
+receivers:
+  - name: 'slack-notifications'
+    slack_configs:
+      - api_url: 'https://hooks.slack.com/services/XXX/YYY/ZZZ'
+        channel: '#taskboard-alerts'
+        send_resolved: true
+
+route:
+  receiver: 'slack-notifications'
