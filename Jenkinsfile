@@ -3,7 +3,7 @@ pipeline {
 
   environment {
     AWS_REGION   = 'ap-south-1'
-    ECR_REPO     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/taskboard"
+    ECR_REPO     = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/taskboard-project"
     IMAGE_TAG    = "${env.BUILD_NUMBER}"
   }
 
@@ -11,7 +11,7 @@ pipeline {
 
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/<your-username>/taskboard.git'
+        git branch: 'main', url: 'https://github.com/ABHI7908/taskboard-project.git'
       }
     }
 
