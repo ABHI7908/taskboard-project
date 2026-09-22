@@ -3,30 +3,47 @@ pipeline {
 
     environment {
         AWS_REGION = 'ap-south-1'
-        ECR_REPO   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/taskboard"
-        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+        AWS_ACCOUNT_ID = '035930871892'
+        ECR_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/taskboard"
+        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-        stage('Build & Unit Test') {
+        stage('Install dependencies') {
             steps {
                 sh 'npm ci'
-                sh 'npm test'
+            }
+        }
+
+        stage('Run unit tests') {
+            steps {
+                sh 'npm test -- --ci --coverage'
             }
         }
 
         stage('Code Quality - SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
-                    sh 'sonar-scanner'
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=taskboard \
+                        -Dsonar.projectName=taskboard \
+                        -Dsonar.sources=. \
+                        -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/**
+                    '''
                 }
             }
         }
 
         stage('Security Scan - Trivy (filesystem)') {
             steps {
-                sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                sh 'trivy fs --exit-code 1 --severity HIGH,CRITICAL .'
             }
         }
 
@@ -38,7 +55,7 @@ pipeline {
 
         stage('Security Scan - Trivy (image)') {
             steps {
-                sh "trivy image --exit-code 1 --severity CRITICAL ${ECR_REPO}:${IMAGE_TAG}"
+                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}"
             }
         }
 
@@ -46,7 +63,7 @@ pipeline {
             steps {
                 sh """
                     aws ecr get-login-password --region ${AWS_REGION} | \
-                    docker login --username AWS --password-stdin ${ECR_REPO}
+                    docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
                     docker push ${ECR_REPO}:${IMAGE_TAG}
                 """
@@ -58,12 +75,12 @@ pipeline {
                 sh """
                     aws eks update-kubeconfig --name taskboard-eks --region ${AWS_REGION}
 
-                    sed -i 's|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|' k8s/deployment.yaml
+                    sed -i 's|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|g' k8s/deployment.yaml
 
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/service.yaml
 
-                    kubectl rollout status deployment/taskboard
+                    kubectl rollout status deployment/taskboard --timeout=180s
                 """
             }
         }
@@ -73,7 +90,6 @@ pipeline {
         success {
             echo "Pipeline succeeded — image ${ECR_REPO}:${IMAGE_TAG} deployed."
         }
-
         failure {
             echo 'Pipeline failed — check the stage logs above.'
         }
