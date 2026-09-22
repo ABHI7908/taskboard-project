@@ -16,8 +16,13 @@ pipeline {
         }
 
         stage('Install dependencies') {
-            steps {
-                sh 'npm ci'
+             steps {
+                 sh '''
+                     export PATH=/usr/bin:/usr/local/bin:$PATH
+                     node --version
+                     npm --version
+                     npm ci
+                    '''
             }
         }
 
