@@ -7,13 +7,13 @@ pipeline {
     IMAGE_TAG    = "${env.BUILD_NUMBER}"
   }
 
-  stages {
-
-    stage('Checkout') {
-      steps {
-        git branch: 'main', url: 'https://github.com/<your-username>/taskboard.git'
-      }
+  stage('Checkout') {
+    steps {
+        git branch: 'main',
+            credentialsId: 'github-cred',
+            url: 'https://github.com/ABHI7908/taskboard-project.git'
     }
+}
 
     stage('Build & Unit Test') {
       steps {
