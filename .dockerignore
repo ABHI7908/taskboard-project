@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+coverage
+terraform
+terraform-jenkins
+k8s
+*.md
