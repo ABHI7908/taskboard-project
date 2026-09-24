@@ -4,7 +4,8 @@ pipeline {
     environment {
         AWS_REGION = 'ap-south-1'
         AWS_ACCOUNT_ID = '035930871892'
-        ECR_REPO = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/taskboard"
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        ECR_REPO = "${ECR_REGISTRY}/taskboard"
         IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -77,7 +78,7 @@ pipeline {
                 sh '''
                     set -eu
                     aws ecr get-login-password --region "$AWS_REGION" | \
-                        docker login --username AWS --password-stdin "$ECR_REPO"
+                        docker login --username AWS --password-stdin "$ECR_REGISTRY"
                     docker push "$ECR_REPO:$IMAGE_TAG"
                 '''
             }
