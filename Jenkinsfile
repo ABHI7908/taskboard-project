@@ -37,12 +37,15 @@ pipeline {
         stage('Code Quality - SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
-                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             set -eu
+                            SONAR_HOST_URL="${SONAR_HOST_URL:-http://127.0.0.1:9000}"
+                            curl --fail --silent --show-error --max-time 10 "$SONAR_HOST_URL/api/system/status" >/dev/null
                             sonar-scanner \\
                                 -Dsonar.projectKey=taskboard \\
                                 -Dsonar.projectName=taskboard \\
+                                -Dsonar.host.url="$SONAR_HOST_URL" \\
                                 -Dsonar.sources=src \\
                                 -Dsonar.tests=test \\
                                 -Dsonar.test.inclusions=test/**/*.js \\
