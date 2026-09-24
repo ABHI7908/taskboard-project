@@ -16,13 +16,14 @@ pipeline {
         }
 
         stage('Install dependencies') {
-             steps {
-                 sh '''
-                     export PATH=/usr/bin:/usr/local/bin:$PATH
-                     node --version
-                     npm --version
-                     npm ci
-                    '''
+            steps {
+                sh '''
+                    set -eu
+                    export PATH=/usr/bin:/usr/local/bin:$PATH
+                    node --version
+                    npm --version
+                    npm ci
+                '''
             }
         }
 
@@ -35,17 +36,20 @@ pipeline {
         stage('Code Quality - SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
-                    sh '''
-                       sonar-scanner \
-                       -Dsonar.projectKey=taskboard \
-                       -Dsonar.projectName=taskboard \
-                       -Dsonar.sources=app.js \
-                       -Dsonar.tests=test \
-                       -Dsonar.test.inclusions=test/**/*.js \
-                       -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \
-                       -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-                       -Dsonar.host.url=http://localhost:9000 \
-                       -Dsonar.token=******
+                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            set -eu
+                            sonar-scanner \\
+                                -Dsonar.projectKey=taskboard \\
+                                -Dsonar.projectName=taskboard \\
+                                -Dsonar.sources=app.js \\
+                                -Dsonar.tests=test \\
+                                -Dsonar.test.inclusions=test/**/*.js \\
+                                -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \\
+                                -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \\
+                                -Dsonar.token="$SONAR_TOKEN"
+                        '''
+                    }
                 }
             }
         }
@@ -58,39 +62,39 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker build -t ${ECR_REPO}:${IMAGE_TAG} ."
+                sh 'docker build --tag "${ECR_REPO}:${IMAGE_TAG}" .'
             }
         }
 
         stage('Security Scan - Trivy (image)') {
             steps {
-                sh "trivy image --exit-code 0 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}"
+                sh 'trivy image --exit-code 0 --severity HIGH,CRITICAL "${ECR_REPO}:${IMAGE_TAG}"'
             }
         }
 
         stage('Push to ECR') {
             steps {
-                sh """
-                    aws ecr get-login-password --region ${AWS_REGION} | \
-                    docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-
-                    docker push ${ECR_REPO}:${IMAGE_TAG}
-                """
+                sh '''
+                    set -eu
+                    aws ecr get-login-password --region "$AWS_REGION" | \
+                        docker login --username AWS --password-stdin "$ECR_REPO"
+                    docker push "$ECR_REPO:$IMAGE_TAG"
+                '''
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                sh """
-                    aws eks update-kubeconfig --name taskboard-eks --region ${AWS_REGION}
+                sh '''
+                    set -eu
+                    aws eks update-kubeconfig --name taskboard-eks --region "$AWS_REGION"
 
-                    sed -i 's|IMAGE_PLACEHOLDER|${ECR_REPO}:${IMAGE_TAG}|g' k8s/deployment.yaml
+                    sed -i "s|IMAGE_PLACEHOLDER|$ECR_REPO:$IMAGE_TAG|g" k8s/deployment.yaml
 
                     kubectl apply -f k8s/deployment.yaml
                     kubectl apply -f k8s/service.yaml
-
                     kubectl rollout status deployment/taskboard --timeout=180s
-                """
+                '''
             }
         }
     }
