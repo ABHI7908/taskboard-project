@@ -36,14 +36,16 @@ pipeline {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
                     sh '''
-                        sonar-scanner \
-                        -Dsonar.projectKey=taskboard \
-                        -Dsonar.projectName=taskboard \
-                        -Dsonar.sources=. \
-                        -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \
-                        -Dsonar.host.url=$SONAR_HOST_URL \
-                        -Dsonar.token=$SONAR_AUTH_TOKEN
-                    '''
+                       sonar-scanner \
+                       -Dsonar.projectKey=taskboard \
+                       -Dsonar.projectName=taskboard \
+                       -Dsonar.sources=app.js \
+                       -Dsonar.tests=test \
+                       -Dsonar.test.inclusions=test/**/*.js \
+                       -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \
+                       -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                       -Dsonar.host.url=http://localhost:9000 \
+                       -Dsonar.token=******
                 }
             }
         }
