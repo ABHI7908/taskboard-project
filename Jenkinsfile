@@ -119,12 +119,27 @@ pipeline {
     post {
         success {
             echo "Pipeline succeeded — image ${ECR_REPO}:${IMAGE_TAG} deployed."
+            emailext(
+                to: 'abhinaylone3@gmail.com',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline succeeded.\\n\\nJob: ${env.JOB_NAME}\\nBuild: #${env.BUILD_NUMBER}\\nImage: ${ECR_REPO}:${IMAGE_TAG}\\nBuild URL: ${env.BUILD_URL}"
+            )
         }
         failure {
             echo 'Pipeline failed — check the stage logs above.'
+            emailext(
+                to: 'abhinaylone3@gmail.com',
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline failed.\\n\\nJob: ${env.JOB_NAME}\\nBuild: #${env.BUILD_NUMBER}\\nBuild URL: ${env.BUILD_URL}\\nPlease check the Jenkins console output for details."
+            )
         }
         aborted {
             echo 'Pipeline stopped — deployment approval was not granted or timed out.'
+            emailext(
+                to: 'abhinaylone3@gmail.com',
+                subject: "ABORTED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline was aborted or the deployment approval timed out.\\n\\nJob: ${env.JOB_NAME}\\nBuild: #${env.BUILD_NUMBER}\\nBuild URL: ${env.BUILD_URL}"
+            )
         }
     }
 }
