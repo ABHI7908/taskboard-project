@@ -37,7 +37,7 @@ pipeline {
         stage('Code Quality - SonarQube') {
             steps {
                 withSonarQubeEnv('sonarqube-server') {
-                    withCredentials([string(credentialsId: 'sonarqube-token', variable: 'SONAR_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh '''
                             set -eu
                             sonar-scanner \\
@@ -77,7 +77,7 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    aws ecr get-login-password --region "$AWS_REGION" | \
+                    aws ecr get-login-password --region "$AWS_REGION" | \\
                         docker login --username AWS --password-stdin "$ECR_REGISTRY"
                     docker push "$ECR_REPO:$IMAGE_TAG"
                 '''
