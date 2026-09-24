@@ -43,7 +43,7 @@ pipeline {
                             sonar-scanner \\
                                 -Dsonar.projectKey=taskboard \\
                                 -Dsonar.projectName=taskboard \\
-                                -Dsonar.sources=app.js \\
+                                -Dsonar.sources=src \\
                                 -Dsonar.tests=test \\
                                 -Dsonar.test.inclusions=test/**/*.js \\
                                 -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \\
