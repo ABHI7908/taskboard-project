@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()
+    }
+
     environment {
         AWS_REGION = 'ap-south-1'
         AWS_ACCOUNT_ID = '035930871892'
@@ -87,6 +91,15 @@ pipeline {
             }
         }
 
+        stage('Approve deployment') {
+            options {
+                timeout(time: 30, unit: 'MINUTES')
+            }
+            steps {
+                input message: "Deploy ${ECR_REPO}:${IMAGE_TAG} to EKS?", ok: 'Approve deployment', submitter: 'jenkins-admin', submitterParameter: 'DEPLOY_APPROVER'
+            }
+        }
+
         stage('Deploy to EKS') {
             steps {
                 sh '''
@@ -109,6 +122,9 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed — check the stage logs above.'
+        }
+        aborted {
+            echo 'Pipeline stopped — deployment approval was not granted or timed out.'
         }
     }
 }
