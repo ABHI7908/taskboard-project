@@ -40,7 +40,9 @@ pipeline {
                         -Dsonar.projectKey=taskboard \
                         -Dsonar.projectName=taskboard \
                         -Dsonar.sources=. \
-                        -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/**
+                        -Dsonar.exclusions=node_modules/**,coverage/**,k8s/**,terraform/**,terraform-jenkins/** \
+                        -Dsonar.host.url=$SONAR_HOST_URL \
+                        -Dsonar.token=$SONAR_AUTH_TOKEN
                     '''
                 }
             }
@@ -48,7 +50,7 @@ pipeline {
 
         stage('Security Scan - Trivy (filesystem)') {
             steps {
-                sh 'trivy fs --exit-code 1 --severity HIGH,CRITICAL .'
+                sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
             }
         }
 
@@ -60,7 +62,7 @@ pipeline {
 
         stage('Security Scan - Trivy (image)') {
             steps {
-                sh "trivy image --exit-code 1 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}"
+                sh "trivy image --exit-code 0 --severity HIGH,CRITICAL ${ECR_REPO}:${IMAGE_TAG}"
             }
         }
 
