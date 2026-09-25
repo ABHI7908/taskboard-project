@@ -105,7 +105,7 @@ pipeline {
                 timeout(time: 30, unit: 'MINUTES')
             }
             steps {
-                input message: "Deploy ${ECR_REPO}:${IMAGE_TAG} to EKS?", ok: 'Approve deployment', submitter: 'jenkins-admin', submitterParameter: 'DEPLOY_APPROVER'
+                input message: "Deploy ${ECR_REPO}:${IMAGE_TAG} to EKS?", ok: 'Approve deployment', submitter: 'admin', submitterParameter: 'DEPLOY_APPROVER'
             }
         }
 
