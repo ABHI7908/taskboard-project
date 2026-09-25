@@ -10,13 +10,22 @@ pipeline {
         AWS_ACCOUNT_ID = '035930871892'
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         ECR_REPO = "${ECR_REGISTRY}/taskboard"
-        IMAGE_TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Set image tag') {
+            steps {
+                script {
+                    def shortSha = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    env.IMAGE_TAG = "${env.BUILD_NUMBER}-${shortSha}"
+                    echo "Using image tag: ${env.IMAGE_TAG}"
+                }
             }
         }
 
